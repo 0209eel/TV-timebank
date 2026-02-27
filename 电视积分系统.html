@@ -1,0 +1,717 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>家庭积分银行 - 看电视时间兑换系统</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;700;900&family=DM+Sans:wght@400;500;700&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        vintage: {
+                            cream: '#F5F1E8',
+                            beige: '#E8DFC8',
+                            tan: '#D4C4A8',
+                            brown: '#8B6F4E',
+                            rust: '#B85C38',
+                            orange: '#D97B4D',
+                            green: '#4A5D4E',
+                            dark: '#3A3329',
+                            paper: '#FAF8F3'
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['DM Sans', 'Noto Sans SC', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body {
+            background-color: #F5F1E8;
+            background-image: 
+                radial-gradient(#D4C4A8 1px, transparent 1px),
+                radial-gradient(#D4C4A8 1px, transparent 1px);
+            background-size: 40px 40px;
+            background-position: 0 0, 20px 20px;
+            font-family: 'DM Sans', 'Noto Sans SC', sans-serif;
+        }
+        
+        .vintage-card {
+            background: #FAF8F3;
+            box-shadow: 
+                0 4px 0 #D4C4A8,
+                0 8px 16px rgba(139, 111, 78, 0.15);
+            border: 2px solid #E8DFC8;
+            transition: all 0.2s ease;
+        }
+        
+        .vintage-card:active {
+            transform: translateY(4px);
+            box-shadow: 
+                0 0 0 #D4C4A8,
+                0 2px 8px rgba(139, 111, 78, 0.1);
+        }
+        
+        .vintage-btn {
+            background: #4A5D4E;
+            color: #FAF8F3;
+            box-shadow: 0 4px 0 #3A4A3E;
+            transition: all 0.15s ease;
+        }
+        
+        .vintage-btn:active {
+            transform: translateY(4px);
+            box-shadow: 0 0 0 #3A4A3E;
+        }
+        
+        .vintage-btn-rust {
+            background: #B85C38;
+            color: #FAF8F3;
+            box-shadow: 0 4px 0 #8B4513;
+        }
+        
+        .vintage-btn-rust:active {
+            transform: translateY(4px);
+            box-shadow: 0 0 0 #8B4513;
+        }
+        
+        .vintage-btn-orange {
+            background: #D97B4D;
+            color: #FAF8F3;
+            box-shadow: 0 4px 0 #B85C38;
+        }
+        
+        .vintage-btn-orange:active {
+            transform: translateY(4px);
+            box-shadow: 0 0 0 #B85C38;
+        }
+        
+        .stamp-border {
+            border: 3px dashed #B85C38;
+            border-radius: 16px;
+            position: relative;
+        }
+        
+        .stamp-border::before {
+            content: '✓';
+            position: absolute;
+            top: -12px;
+            left: 20px;
+            background: #FAF8F3;
+            padding: 0 8px;
+            color: #B85C38;
+            font-weight: bold;
+            font-size: 14px;
+        }
+        
+        .number-display {
+            font-variant-numeric: tabular-nums;
+            letter-spacing: -0.02em;
+        }
+        
+        .texture-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            opacity: 0.03;
+            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+            z-index: 50;
+        }
+        
+        .mode-switch {
+            background: #E8DFC8;
+            border-radius: 50px;
+            padding: 4px;
+            position: relative;
+        }
+        
+        .mode-indicator {
+            position: absolute;
+            top: 4px;
+            left: 4px;
+            height: calc(100% - 8px);
+            background: #4A5D4E;
+            border-radius: 50px;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 2px 8px rgba(74, 93, 78, 0.3);
+        }
+        
+        .ticket-notch {
+            position: relative;
+        }
+        
+        .ticket-notch::before,
+        .ticket-notch::after {
+            content: '';
+            position: absolute;
+            width: 20px;
+            height: 20px;
+            background: #F5F1E8;
+            border-radius: 50%;
+            top: 50%;
+            transform: translateY(-50%);
+        }
+        
+        .ticket-notch::before {
+            left: -10px;
+            box-shadow: inset -2px 0 4px rgba(0,0,0,0.1);
+        }
+        
+        .ticket-notch::after {
+            right: -10px;
+            box-shadow: inset 2px 0 4px rgba(0,0,0,0.1);
+        }
+        
+        .wavy-line {
+            background-image: repeating-linear-gradient(
+                90deg,
+                #B85C38,
+                #B85C38 8px,
+                transparent 8px,
+                transparent 12px
+            );
+            height: 2px;
+            border: none;
+        }
+        
+        .typewriter {
+            border-right: 2px solid #B85C38;
+            animation: blink 1s step-end infinite;
+        }
+        
+        @keyframes blink {
+            50% { border-color: transparent; }
+        }
+        
+        .counter-box {
+            background: #3A3329;
+            color: #E8DFC8;
+            font-family: 'Courier New', monospace;
+            border-radius: 8px;
+            box-shadow: inset 0 2px 8px rgba(0,0,0,0.3);
+        }
+        
+        .history-scroll::-webkit-scrollbar {
+            width: 6px;
+        }
+        
+        .history-scroll::-webkit-scrollbar-track {
+            background: #E8DFC8;
+            border-radius: 3px;
+        }
+        
+        .history-scroll::-webkit-scrollbar-thumb {
+            background: #B85C38;
+            border-radius: 3px;
+        }
+    </style>
+<base target="_blank">
+</head>
+<body class="text-vintage-dark min-h-screen pb-8">
+
+    <div class="texture-overlay"></div>
+
+    <div class="relative z-10 max-w-md mx-auto px-4 pt-6">
+        
+        <!-- 复古标题区 -->
+        <header class="mb-6 text-center">
+            <div class="inline-block bg-vintage-cream border-2 border-vintage-brown px-6 py-2 rounded-full mb-3 shadow-md">
+                <span class="text-vintage-brown font-bold text-sm tracking-widest uppercase">EST. 2024</span>
+            </div>
+            <h1 class="text-4xl font-black text-vintage-dark mb-1 tracking-tight" style="text-shadow: 2px 2px 0 #D4C4A8;">
+                家庭积分银行
+            </h1>
+            <p class="text-vintage-brown font-medium text-sm italic">Family Time Exchange System</p>
+            <div class="wavy-line w-32 mx-auto mt-3"></div>
+        </header>
+
+        <!-- 复古余额显示 -->
+        <div class="vintage-card rounded-2xl p-6 mb-6 ticket-notch relative overflow-hidden">
+            <div class="absolute top-0 right-0 bg-vintage-rust text-vintage-paper text-xs font-bold px-3 py-1 rounded-bl-lg">
+                NO. <span id="ticketNumber">001</span>
+            </div>
+            
+            <div class="text-center mb-4">
+                <p class="text-vintage-brown text-sm font-bold uppercase tracking-wider mb-2">Current Balance</p>
+                <div class="counter-box inline-block px-6 py-3 text-4xl font-bold number-display mb-2" id="totalMinutes">
+                    0
+                </div>
+                <p class="text-vintage-dark font-bold text-lg">分钟 <span class="text-vintage-brown text-sm font-normal">min</span></p>
+            </div>
+
+            <div class="flex justify-between items-center text-sm border-t-2 border-dashed border-vintage-tan pt-3">
+                <span class="text-vintage-brown">≈ <span id="hoursDisplay">0</span>小时<span id="minsDisplay">0</span>分</span>
+                <span class="text-vintage-rust font-bold" id="statusText">余额充足</span>
+            </div>
+        </div>
+
+        <!-- 模式切换 -->
+        <div class="mode-switch flex relative mb-6 shadow-inner">
+            <div id="modeIndicator" class="mode-indicator" style="width: calc(50% - 4px)"></div>
+            <button onclick="switchMode('earn')" id="earnBtn" class="flex-1 py-3 px-4 rounded-full text-sm font-bold relative z-10 text-vintage-paper transition-colors">
+                赚取时间
+            </button>
+            <button onclick="switchMode('spend')" id="spendBtn" class="flex-1 py-3 px-4 rounded-full text-sm font-bold relative z-10 text-vintage-brown transition-colors">
+                消耗时间
+            </button>
+        </div>
+
+        <!-- 赚取模式 -->
+        <div id="earnView" class="space-y-4">
+            
+            <!-- 读书任务 - 核心修改 -->
+            <div class="vintage-card rounded-2xl p-5">
+                <div class="flex items-start gap-4 mb-4">
+                    <div class="w-12 h-12 bg-vintage-green rounded-xl flex items-center justify-center text-vintage-paper text-2xl shadow-md flex-shrink-0">
+                        📚
+                    </div>
+                    <div class="flex-1">
+                        <h3 class="font-bold text-vintage-dark text-lg leading-tight">读书任务</h3>
+                        <p class="text-vintage-brown text-xs mt-1 leading-relaxed">
+                            按时完成、认真读书<br>
+                            <span class="text-vintage-rust font-bold">无提醒 +10分 | 提醒1次 +5分 | 提醒2次 0分</span>
+                        </p>
+                    </div>
+                </div>
+
+                <!-- 读书任务选项 -->
+                <div class="grid grid-cols-3 gap-2">
+                    <button onclick="addReadingTime(10)" class="vintage-btn py-3 px-2 rounded-xl font-bold text-sm">
+                        无提醒<br>+10分
+                    </button>
+                    <button onclick="addReadingTime(5)" class="vintage-btn-orange py-3 px-2 rounded-xl font-bold text-sm">
+                        提醒1次<br>+5分
+                    </button>
+                    <button onclick="addReadingTime(0)" class="bg-vintage-tan text-vintage-dark py-3 px-2 rounded-xl font-bold text-sm shadow-md border-2 border-vintage-brown">
+                        提醒2次<br>0分
+                    </button>
+                </div>
+            </div>
+
+            <!-- 小提琴+练字 -->
+            <div class="vintage-card rounded-2xl p-5 cursor-pointer" onclick="addTime(10, '小提琴+练字', 'violin')">
+                <div class="flex items-center gap-4">
+                    <div class="w-12 h-12 bg-vintage-rust rounded-xl flex items-center justify-center text-vintage-paper text-2xl shadow-md">
+                        🎻
+                    </div>
+                    <div class="flex-1">
+                        <h3 class="font-bold text-vintage-dark text-lg">小提琴 + 练字</h3>
+                        <p class="text-vintage-brown text-xs">练琴30分钟 + 练字一篇</p>
+                    </div>
+                    <div class="text-right">
+                        <div class="text-2xl font-black text-vintage-rust">+10</div>
+                        <div class="text-xs text-vintage-brown">分钟</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 阅读+户外 -->
+            <div class="vintage-card rounded-2xl p-5 cursor-pointer" onclick="addTime(10, '阅读+户外活动', 'outdoor')">
+                <div class="flex items-center gap-4">
+                    <div class="w-12 h-12 bg-vintage-green rounded-xl flex items-center justify-center text-vintage-paper text-2xl shadow-md">
+                        🌲
+                    </div>
+                    <div class="flex-1">
+                        <h3 class="font-bold text-vintage-dark text-lg">阅读 + 户外活动</h3>
+                        <p class="text-vintage-brown text-xs">课外书30分钟 + 户外30分钟</p>
+                    </div>
+                    <div class="text-right">
+                        <div class="text-2xl font-black text-vintage-green">+10</div>
+                        <div class="text-xs text-vintage-brown">分钟</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 自理能力 -->
+            <div class="vintage-card rounded-2xl p-5">
+                <div class="flex items-start gap-4 mb-4">
+                    <div class="w-12 h-12 bg-vintage-orange rounded-xl flex items-center justify-center text-vintage-paper text-2xl shadow-md flex-shrink-0">
+                        🧹
+                    </div>
+                    <div class="flex-1">
+                        <h3 class="font-bold text-vintage-dark text-lg">自理能力 + 家务</h3>
+                        <p class="text-vintage-brown text-xs mt-1">
+                            刷牙洗脸 +2分 | 洗袜子/家务 +5分<br>
+                            <span class="text-vintage-rust">每日上限10分</span>
+                        </p>
+                    </div>
+                </div>
+                
+                <div class="grid grid-cols-2 gap-2">
+                    <button onclick="addSelfCare(2)" class="vintage-btn-orange py-3 rounded-xl font-bold text-sm">
+                        刷牙洗脸 +2分
+                    </button>
+                    <button onclick="addSelfCare(5)" class="vintage-btn py-3 rounded-xl font-bold text-sm">
+                        洗袜子/家务 +5分
+                    </button>
+                </div>
+                <div class="mt-2 text-center">
+                    <span class="text-xs text-vintage-brown bg-vintage-beige px-3 py-1 rounded-full">
+                        今日已获: <span id="selfCareToday" class="font-bold text-vintage-rust">0</span>/10 分
+                    </span>
+                </div>
+            </div>
+
+            <!-- 自定义添加 -->
+            <div class="stamp-border p-1 rounded-2xl">
+                <button onclick="showCustomAdd()" class="w-full py-4 bg-vintage-cream rounded-xl font-bold text-vintage-brown border-2 border-dashed border-vintage-brown hover:bg-vintage-beige transition-colors flex items-center justify-center gap-2">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+                    自定义添加时间
+                </button>
+            </div>
+        </div>
+
+        <!-- 消耗模式 -->
+        <div id="spendView" class="hidden space-y-4">
+            <div class="vintage-card rounded-2xl p-6">
+                <div class="text-center mb-6">
+                    <div class="w-20 h-20 bg-vintage-rust rounded-full flex items-center justify-center mx-auto mb-3 shadow-lg text-4xl">
+                        📺
+                    </div>
+                    <h3 class="text-xl font-bold text-vintage-dark">消耗看电视时间</h3>
+                    <p class="text-vintage-brown text-sm">输入实际观看的分钟数</p>
+                </div>
+
+                <div class="space-y-4">
+                    <div class="counter-box p-4 text-center">
+                        <input type="number" id="spendInput" value="30" 
+                            class="bg-transparent text-center text-3xl font-bold w-full focus:outline-none text-vintage-paper placeholder-vintage-tan"
+                            min="1">
+                    </div>
+
+                    <div class="grid grid-cols-4 gap-2">
+                        <button onclick="adjustSpend(-10)" class="py-2 bg-vintage-beige rounded-lg font-bold text-vintage-brown hover:bg-vintage-tan">-10</button>
+                        <button onclick="setSpend(15)" class="py-2 bg-vintage-beige rounded-lg font-bold text-vintage-brown hover:bg-vintage-tan">15</button>
+                        <button onclick="setSpend(30)" class="py-2 bg-vintage-beige rounded-lg font-bold text-vintage-brown hover:bg-vintage-tan">30</button>
+                        <button onclick="adjustSpend(10)" class="py-2 bg-vintage-beige rounded-lg font-bold text-vintage-brown hover:bg-vintage-tan">+10</button>
+                    </div>
+
+                    <button onclick="confirmSpend()" class="w-full vintage-btn-rust py-4 rounded-xl font-bold text-lg">
+                        确认扣除时间
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 历史记录 -->
+        <div class="mt-6 vintage-card rounded-2xl p-4">
+            <div class="flex justify-between items-center mb-3 border-b-2 border-vintage-beige pb-2">
+                <h4 class="font-bold text-vintage-dark flex items-center gap-2">
+                    <span class="w-2 h-2 bg-vintage-rust rounded-full"></span>
+                    今日记录
+                </h4>
+                <button onclick="clearHistory()" class="text-xs text-vintage-rust font-bold hover:underline">清空</button>
+            </div>
+            <div id="historyList" class="space-y-2 max-h-40 overflow-y-auto history-scroll pr-1">
+                <div class="text-center text-vintage-brown text-sm py-4 italic">暂无记录</div>
+            </div>
+        </div>
+
+        <!-- 页脚 -->
+        <div class="text-center mt-6 text-vintage-brown text-xs">
+            <p>Keep track of time, make every minute count</p>
+            <p class="mt-1 opacity-60">© 2024 Family Bank</p>
+        </div>
+    </div>
+
+    <!-- 自定义添加弹窗 -->
+    <div id="customModal" class="fixed inset-0 bg-vintage-dark/80 backdrop-blur-sm z-50 hidden items-center justify-center p-4">
+        <div class="vintage-card rounded-2xl p-6 w-full max-w-sm relative">
+            <button onclick="closeModal()" class="absolute top-3 right-3 w-8 h-8 bg-vintage-beige rounded-full flex items-center justify-center text-vintage-brown font-bold">×</button>
+            
+            <h3 class="text-xl font-bold text-vintage-dark mb-4 text-center border-b-2 border-vintage-beige pb-2">自定义添加</h3>
+            
+            <div class="mb-4">
+                <label class="block text-sm font-bold text-vintage-brown mb-2">分钟数</label>
+                <div class="counter-box p-3">
+                    <input type="number" id="customInput" value="10" 
+                        class="bg-transparent text-center text-3xl font-bold w-full focus:outline-none text-vintage-paper"
+                        min="1" max="60">
+                </div>
+            </div>
+
+            <div class="grid grid-cols-4 gap-2 mb-4">
+                <button onclick="setCustom(5)" class="py-2 bg-vintage-beige rounded-lg font-bold text-vintage-brown text-sm hover:bg-vintage-tan">5</button>
+                <button onclick="setCustom(10)" class="py-2 bg-vintage-beige rounded-lg font-bold text-vintage-brown text-sm hover:bg-vintage-tan">10</button>
+                <button onclick="setCustom(15)" class="py-2 bg-vintage-beige rounded-lg font-bold text-vintage-brown text-sm hover:bg-vintage-tan">15</button>
+                <button onclick="setCustom(20)" class="py-2 bg-vintage-beige rounded-lg font-bold text-vintage-brown text-sm hover:bg-vintage-tan">20</button>
+            </div>
+
+            <button onclick="confirmCustom()" class="w-full vintage-btn py-3 rounded-xl font-bold">
+                确认添加
+            </button>
+        </div>
+    </div>
+
+    <script>
+        // 数据存储
+        let totalMinutes = parseInt(localStorage.getItem('tvTimeTotal_v2')) || 0;
+        let history = JSON.parse(localStorage.getItem('tvTimeHistory_v2')) || [];
+        let selfCareToday = 0;
+
+        // 初始化
+        document.addEventListener('DOMContentLoaded', () => {
+            updateDisplay();
+            renderHistory();
+            updateSelfCareDisplay();
+            
+            // 检查日期重置
+            const lastDate = localStorage.getItem('tvTimeLastDate_v2');
+            const today = new Date().toDateString();
+            if (lastDate !== today) {
+                localStorage.setItem('tvTimeLastDate_v2', today);
+                selfCareToday = 0;
+            } else {
+                calculateSelfCareToday();
+            }
+        });
+
+        // 计算今日自理能力分
+        function calculateSelfCareToday() {
+            const today = new Date().toDateString();
+            selfCareToday = history
+                .filter(h => h.type === 'selfcare' && h.date === today && h.minutes > 0)
+                .reduce((sum, h) => sum + h.minutes, 0);
+            updateSelfCareDisplay();
+        }
+
+        function updateSelfCareDisplay() {
+            document.getElementById('selfCareToday').textContent = selfCareToday;
+        }
+
+        // 切换模式
+        function switchMode(mode) {
+            const indicator = document.getElementById('modeIndicator');
+            const earnBtn = document.getElementById('earnBtn');
+            const spendBtn = document.getElementById('spendBtn');
+            const earnView = document.getElementById('earnView');
+            const spendView = document.getElementById('spendView');
+
+            if (mode === 'earn') {
+                indicator.style.transform = 'translateX(0)';
+                earnBtn.classList.replace('text-vintage-brown', 'text-vintage-paper');
+                spendBtn.classList.replace('text-vintage-paper', 'text-vintage-brown');
+                earnView.classList.remove('hidden');
+                spendView.classList.add('hidden');
+            } else {
+                indicator.style.transform = 'translateX(calc(100% + 4px))';
+                earnBtn.classList.replace('text-vintage-paper', 'text-vintage-brown');
+                spendBtn.classList.replace('text-vintage-brown', 'text-vintage-paper');
+                earnView.classList.add('hidden');
+                spendView.classList.remove('hidden');
+            }
+        }
+
+        // 读书任务逻辑
+        function addReadingTime(minutes) {
+            let description = '';
+            if (minutes === 10) description = '读书任务-无提醒';
+            else if (minutes === 5) description = '读书任务-提醒1次';
+            else description = '读书任务-提醒2次(无奖励)';
+            
+            addTime(minutes, description, 'reading');
+            
+            // 视觉反馈
+            if (minutes > 0) {
+                showToast(`获得 ${minutes} 分钟！`);
+            } else {
+                showToast('已完成，但无奖励时间');
+            }
+        }
+
+        // 通用添加时间
+        function addTime(minutes, description, type) {
+            totalMinutes += minutes;
+            
+            const today = new Date().toDateString();
+            const record = {
+                date: today,
+                time: new Date().toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' }),
+                task: description,
+                minutes: minutes,
+                type: type || 'custom',
+                balance: totalMinutes
+            };
+            
+            history.unshift(record);
+            if (history.length > 30) history.pop();
+            
+            // 如果是自理能力，更新今日统计
+            if (type === 'selfcare') {
+                selfCareToday += minutes;
+                updateSelfCareDisplay();
+            }
+            
+            saveData();
+            updateDisplay();
+            renderHistory();
+        }
+
+        // 自理能力特殊处理（上限检查）
+        function addSelfCare(minutes) {
+            if (selfCareToday + minutes > 10) {
+                alert(`今日自理能力奖励已达上限！\n当前：${selfCareToday}分钟，上限：10分钟`);
+                return;
+            }
+            addTime(minutes, minutes === 2 ? '刷牙洗脸' : '洗袜子/家务', 'selfcare');
+            showToast(`+${minutes} 分钟！`);
+        }
+
+        // 消耗时间
+        function adjustSpend(delta) {
+            const input = document.getElementById('spendInput');
+            let val = parseInt(input.value) || 0;
+            val = Math.max(1, val + delta);
+            input.value = val;
+        }
+
+        function setSpend(val) {
+            document.getElementById('spendInput').value = val;
+        }
+
+        function confirmSpend() {
+            const minutes = parseInt(document.getElementById('spendInput').value) || 0;
+            if (minutes <= 0) return;
+            
+            if (minutes > totalMinutes) {
+                if (confirm(`时间不足！当前余额${totalMinutes}分钟，确定全部用完吗？`)) {
+                    addTime(-totalMinutes, '看电视/玩手机(全部用完)', 'spend');
+                    document.getElementById('spendInput').value = 30;
+                }
+            } else {
+                addTime(-minutes, '看电视/玩手机', 'spend');
+                document.getElementById('spendInput').value = 30;
+                showToast(`已扣除 ${minutes} 分钟`);
+            }
+        }
+
+        // 自定义添加
+        function showCustomAdd() {
+            document.getElementById('customModal').classList.remove('hidden');
+            document.getElementById('customModal').classList.add('flex');
+            document.getElementById('customInput').focus();
+        }
+
+        function closeModal() {
+            document.getElementById('customModal').classList.add('hidden');
+            document.getElementById('customModal').classList.remove('flex');
+        }
+
+        function setCustom(val) {
+            document.getElementById('customInput').value = val;
+        }
+
+        function confirmCustom() {
+            const minutes = parseInt(document.getElementById('customInput').value) || 0;
+            if (minutes <= 0) return;
+            addTime(minutes, '自定义添加', 'custom');
+            closeModal();
+            showToast(`+${minutes} 分钟！`);
+        }
+
+        // 更新显示
+        function updateDisplay() {
+            document.getElementById('totalMinutes').textContent = totalMinutes;
+            
+            const hours = Math.floor(totalMinutes / 60);
+            const mins = totalMinutes % 60;
+            document.getElementById('hoursDisplay').textContent = hours;
+            document.getElementById('minsDisplay').textContent = mins;
+            
+            // 状态文本
+            const statusEl = document.getElementById('statusText');
+            if (totalMinutes >= 60) {
+                statusEl.textContent = '余额充足';
+                statusEl.className = 'text-vintage-green font-bold';
+            } else if (totalMinutes >= 30) {
+                statusEl.textContent = '余额一般';
+                statusEl.className = 'text-vintage-orange font-bold';
+            } else if (totalMinutes > 0) {
+                statusEl.textContent = '余额不足';
+                statusEl.className = 'text-vintage-rust font-bold';
+            } else {
+                statusEl.textContent = '需赚取时间';
+                statusEl.className = 'text-vintage-brown font-bold';
+            }
+            
+            // 票号
+            document.getElementById('ticketNumber').textContent = 
+                String(history.length + 1).padStart(3, '0');
+        }
+
+        // 渲染历史
+        function renderHistory() {
+            const list = document.getElementById('historyList');
+            if (history.length === 0) {
+                list.innerHTML = '<div class="text-center text-vintage-brown text-sm py-4 italic">暂无记录</div>';
+                return;
+            }
+            
+            list.innerHTML = history.map((h, i) => {
+                const isPositive = h.minutes > 0;
+                return `
+                <div class="flex justify-between items-center p-3 bg-vintage-cream rounded-lg border border-vintage-beige text-sm">
+                    <div class="flex items-center gap-2">
+                        <span class="w-1.5 h-1.5 rounded-full ${isPositive ? 'bg-vintage-green' : 'bg-vintage-rust'}"></span>
+                        <div>
+                            <div class="font-bold text-vintage-dark text-xs">${h.task}</div>
+                            <div class="text-vintage-brown text-xs">${h.time}</div>
+                        </div>
+                    </div>
+                    <div class="text-right">
+                        <div class="font-bold ${isPositive ? 'text-vintage-green' : 'text-vintage-rust'} text-sm">
+                            ${isPositive ? '+' : ''}${h.minutes}
+                        </div>
+                        <div class="text-vintage-brown text-xs">余${h.balance}</div>
+                    </div>
+                </div>
+                `;
+            }).join('');
+        }
+
+        // 清空历史
+        function clearHistory() {
+            if (confirm('确定清空今日记录？时间余额将保留。')) {
+                history = [];
+                selfCareToday = 0;
+                updateSelfCareDisplay();
+                saveData();
+                renderHistory();
+                updateDisplay();
+            }
+        }
+
+        // 保存数据
+        function saveData() {
+            localStorage.setItem('tvTimeTotal_v2', totalMinutes);
+            localStorage.setItem('tvTimeHistory_v2', JSON.stringify(history));
+        }
+
+        // 提示
+        function showToast(message) {
+            const toast = document.createElement('div');
+            toast.className = 'fixed top-20 left-1/2 transform -translate-x-1/2 bg-vintage-dark text-vintage-paper px-6 py-3 rounded-full shadow-2xl z-50 font-bold text-sm border-2 border-vintage-brown';
+            toast.textContent = message;
+            document.body.appendChild(toast);
+            setTimeout(() => {
+                toast.style.opacity = '0';
+                toast.style.transform = 'translateX(-50%) translateY(-10px)';
+                setTimeout(() => toast.remove(), 300);
+            }, 2000);
+        }
+
+        // 键盘支持
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') closeModal();
+        });
+    </script>
+</body>
+</html>
